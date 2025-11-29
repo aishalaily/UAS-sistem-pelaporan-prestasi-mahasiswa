@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"uas-go/database"
+	"uas-go/middleware"
 	"uas-go/route"
 )
 
@@ -16,8 +17,11 @@ func SetupApp() *fiber.App {
 
 	app := fiber.New()
 
+	app.Use(middleware.LoggerMiddleware)
+
 	route.RegisterRoutes(app)
 
 	log.Println("App initialized")
+
 	return app
 }
