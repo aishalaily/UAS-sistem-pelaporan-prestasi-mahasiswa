@@ -1,6 +1,9 @@
 package route
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	"uas-go/app/service"
+)
 
 func RegisterRoutes(app *fiber.App) {
 	api := app.Group("/api/v1")
@@ -11,4 +14,7 @@ func RegisterRoutes(app *fiber.App) {
 			"message": "pong",
 		})
 	})
+
+	api.Post("/login", func(c *fiber.Ctx) error { return service.LoginService(c) })
+	api.Get("/profile", func(c *fiber.Ctx) error { return service.ProfileService(c) })
 }

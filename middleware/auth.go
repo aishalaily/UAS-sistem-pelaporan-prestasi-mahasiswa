@@ -35,6 +35,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	claims := token.Claims.(jwt.MapClaims)
 
 	c.Locals("user_id", claims["user_id"])
+	c.Locals("username", claims["username"]) 
 	c.Locals("role", claims["role"])
 
 	return c.Next()

@@ -9,9 +9,10 @@ type User struct {
 	ID        string    `json:"id"`
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
-	Password  string    `json:"-"`
+	Password  string    `json:"password_hash"`
 	FullName  string    `json:"full_name"`
 	RoleID    string    `json:"role_id"`
+	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -29,6 +30,6 @@ type LoginResponse struct {
 type JWTClaims struct {
 	UserID   int    `json:"user_id"`
 	Username string `json:"username"`
-	Role     string `json:"role"`
+	Role     string `json:"name"`
 	jwt.RegisteredClaims
 }
