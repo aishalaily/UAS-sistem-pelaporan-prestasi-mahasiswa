@@ -2,26 +2,26 @@ package middleware
 
 import (
 	"os"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"uas-go/app/model"
 )
 
 func AuthMiddleware(c *fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
 
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+	if authHeader == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
-			"message": "Authorization header missing",
+			"message": "Missing Authorization header",
 		})
 	}
 
-	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	tokenStr := authHeader[len("Bearer "):]
 	secret := os.Getenv("JWT_SECRET")
 
-	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &model.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
 
@@ -32,11 +32,11 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		})
 	}
 
-	claims := token.Claims.(jwt.MapClaims)
+	claims := token.Claims.(*model.JWTClaims)
 
-	c.Locals("user_id", claims["user_id"])
-	c.Locals("username", claims["username"]) 
-	c.Locals("role", claims["role"])
+	c.Locals("id", claims.UserID)
+	c.Locals("username", claims.Username)
+	c.Locals("name", claims.RoleName)
 
 	return c.Next()
 }

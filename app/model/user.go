@@ -28,8 +28,8 @@ type LoginResponse struct {
 }
 
 type JWTClaims struct {
-	UserID   int    `json:"user_id"`
-	Username string `json:"username"`
-	Role     string `json:"name"`
+	UserID   	string `json:"id"`
+	Username 	string `json:"username"`
+	RoleName    string `json:"name"`
 	jwt.RegisteredClaims
 }
