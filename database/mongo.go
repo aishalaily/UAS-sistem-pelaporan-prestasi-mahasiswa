@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"time"
 
@@ -10,21 +10,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var MongoDB *mongo.Database
+var Mongo *mongo.Database
 
-func ConnectMongo() {
-	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGO_URL")))
+func ConnectMongo() error {
+	clientOptions := options.Client().
+		ApplyURI(os.Getenv("MONGO_URI")).
+		SetServerSelectionTimeout(5 * time.Second)
+
+	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to connect MongoDB: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if err := client.Connect(ctx); err != nil {
-		log.Fatal(err)
-	}
-
-	MongoDB = client.Database(os.Getenv("MONGO_DB"))
-	log.Println("MongoDB connected")
+	Mongo = client.Database(os.Getenv("MONGO_DB"))
+	return nil
 }

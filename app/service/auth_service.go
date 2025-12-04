@@ -1,78 +1,64 @@
 package service
 
 import (
-    "database/sql"
-    "os"
-
-    "github.com/gofiber/fiber/v2"
-    "golang.org/x/crypto/bcrypt"
-    "github.com/golang-jwt/jwt/v5"
-
-    "uas-go/app/repository"
+	"github.com/gofiber/fiber/v2"
+	"uas-go/app/model"
+	"uas-go/app/repository"
+	"uas-go/utils"
 )
 
-func LoginService(c *fiber.Ctx) error {
-    type LoginRequest struct {
-        Username    string `json:"username"`
-        Password string `json:"password"`
-    }
-
-    req := new(LoginRequest)
-    if err := c.BodyParser(req); err != nil {
-        return c.Status(400).JSON(fiber.Map{
-            "success": false,
-            "message": "Invalid JSON",
-        })
-    }
-
-    user, err := repository.FindUserByUsername(req.Username)
-    if err == sql.ErrNoRows {
-        return c.Status(401).JSON(fiber.Map{
-            "success": false,
-            "message": "Username tidak ditemukan",
-        })
-    }
-    if err != nil {
-        return c.Status(500).JSON(fiber.Map{
-            "success": false,
-            "message": "Server error",
-        })  
-    }
-
-    if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)) != nil {
-        return c.Status(401).JSON(fiber.Map{
-            "success": false,
-            "message": "Password salah",
-        })
-    }
-
-    // generate JWT
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-        "user_id": user.ID,
-        "role_id": user.RoleID,
-    })
-
-    jwtSecret := []byte(os.Getenv("JWT_SECRET"))
-    tokenString, _ := token.SignedString(jwtSecret)
-
-    return c.JSON(fiber.Map{
-        "success": true,
-        "message": "Login berhasil",
-        "token":   tokenString,
-    })
+type AuthService struct {
+	userRepo       repository.UserRepository
+	roleRepo       repository.RoleRepository
+	permissionRepo repository.PermissionRepository
 }
 
-func ProfileService(c *fiber.Ctx) error {
-	userID := c.Locals("id").(string)
-	username := c.Locals("username").(string)
-	roleName := c.Locals("name").(string)
+func NewAuthService() AuthService {
+	return AuthService{}
+}
 
-	return c.JSON(fiber.Map{
-		"success": true,
-		"user": fiber.Map{
-			"id":       userID,
-			"username": username,
-			"name":     roleName,
-		},
+func (s AuthService) Login(c *fiber.Ctx) error {
+	var req model.LoginRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+
+	user, err := s.userRepo.FindByUsername(req.Username)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "username incorrect"})
+	}
+
+	if !utils.CheckPassword(user.PasswordHash, req.Password) {
+		return c.Status(401).JSON(fiber.Map{"error": "password incorrect"})
+	}
+
+	role, err := s.roleRepo.FindByID(user.RoleID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "role not found"})
+	}
+
+	permissions, _ := s.permissionRepo.GetPermissionsByRole(user.RoleID)
+
+	userResp := model.UserResponse{
+		ID:          user.ID,
+		Username:    user.Username,
+		FullName:    user.FullName,
+		Email:       user.Email,
+		Role:        role.Name,
+		Permissions: permissions,
+	}
+
+	token, err := utils.GenerateToken(userResp)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to generate token"})
+	}
+
+	return c.JSON(model.LoginResponse{
+		Token:        token,
+		RefreshToken: "",
+		User:         userResp,
 	})
 }
+
+

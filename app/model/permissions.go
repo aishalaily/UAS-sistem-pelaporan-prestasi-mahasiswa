@@ -1,9 +1,7 @@
 package model
 
 type Permission struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Resource    string    `json:"resource"`
-	Action      string    `json:"action"`
-	Description string    `json:"description"`
+	ID          string    `json:"id" db:"id"`
+	Name        string    `json:"name" db:"name"`
+	Description string    `json:"description" db:"description"`
 }

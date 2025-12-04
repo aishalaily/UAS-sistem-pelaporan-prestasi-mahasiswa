@@ -2,28 +2,44 @@ package middleware
 
 import "github.com/gofiber/fiber/v2"
 
-func RoleMiddleware(roles ...string) fiber.Handler {
+func AdminOnly() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userRole := c.Locals("role")
+		role := c.Locals("role")
 
-		if userRole == nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"success": false,
-				"message": "Unauthenticated",
+		if role == nil || role.(string) != "admin" {
+			return c.Status(403).JSON(fiber.Map{
+				"error": "admin only",
 			})
 		}
 
-		roleStr := userRole.(string)
+		return c.Next()
+	}
+}
 
-		for _, allowed := range roles {
-			if roleStr == allowed {
-				return c.Next()
-			}
+func LecturerOnly() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		role := c.Locals("role")
+
+		if role == nil || role.(string) != "dosen" {
+			return c.Status(403).JSON(fiber.Map{
+				"error": "lecturer only",
+			})
 		}
 
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"success": false,
-			"message": "You do not have permission",
-		})
+		return c.Next()
+	}
+}
+
+func StudentOnly() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		role := c.Locals("role")
+
+		if role == nil || role.(string) != "mahasiswa" {
+			return c.Status(403).JSON(fiber.Map{
+				"error": "student only",
+			})
+		}
+
+		return c.Next()
 	}
 }

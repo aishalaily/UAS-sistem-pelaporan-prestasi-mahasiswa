@@ -3,6 +3,7 @@ package route
 import (
 	"github.com/gofiber/fiber/v2"
 	"uas-go/app/service"
+	"uas-go/middleware"
 )
 
 func RegisterRoutes(app *fiber.App) {
@@ -15,6 +16,14 @@ func RegisterRoutes(app *fiber.App) {
 		})
 	})
 
-	api.Post("/login", func(c *fiber.Ctx) error { return service.LoginService(c) })
-	api.Get("/profile", func(c *fiber.Ctx) error { return service.ProfileService(c) })
+	authService := service.NewAuthService()
+	profileService := service.ProfileService{}
+
+	api.Post("/login", func(c *fiber.Ctx) error { return authService.Login(c) })
+	api.Get("/profile", middleware.AuthRequired(), func(c *fiber.Ctx) error {
+    return profileService.GetProfile(c)
+})
+	// protected := api.Group("", middleware.AuthRequired())
+	// admin := protected.Group("/admin", middleware.AdminOnly())
+
 }

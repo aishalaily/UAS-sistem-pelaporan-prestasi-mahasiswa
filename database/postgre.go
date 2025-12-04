@@ -2,26 +2,28 @@ package database
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var PostgresDB *pgxpool.Pool
+var PgPool *pgxpool.Pool
 
-func ConnectPostgres() {
-	dsn := os.Getenv("POSTGRES_URL")
+func ConnectPostgres() error {
+    dsn := os.Getenv("DB_DSN")
 
-	db, err := pgxpool.New(context.Background(), dsn)
-	if err != nil {
-		log.Fatalf("Failed to connect PostgreSQL: %v", err)
-	}
+    db, err := pgxpool.New(context.Background(), dsn)
+    if err != nil {
+        return fmt.Errorf("failed to connect PostgreSQL: %w", err)
+    }
 
-	if err := db.Ping(context.Background()); err != nil {
-		log.Fatalf("Postgres ping failed: %v", err)
-	}
+    PgPool = db
 
-	log.Println("PostgreSQL connected")
-	PostgresDB = db
+    if err := PgPool.Ping(context.Background()); err != nil {
+        return fmt.Errorf("PostgreSQL ping error: %w", err)
+    }
+
+    fmt.Println("PostgreSQL connected!")
+    return nil
 }

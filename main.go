@@ -1,15 +1,32 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
+
 	"uas-go/config"
+	"uas-go/database"
+	"uas-go/route"
 )
 
 func main() {
-	app := config.SetupApp()
+	config.LoadEnv()
+	
 
-	port := "3000"
-	log.Println("Running on port", port)
+	if err := database.ConnectPostgres(); err != nil {
+		log.Fatal(err)
+	}
+	if err := database.ConnectMongo(); err != nil {
+		log.Fatal(err)
+	}
 
-	app.Listen(":" + port)
+	app := config.NewFiberApp()
+
+	route.RegisterRoutes(app)
+
+	port := os.Getenv("APP_PORT")
+	fmt.Println("Server running on port", port)
+
+	log.Fatal(app.Listen(":" + port))
 }

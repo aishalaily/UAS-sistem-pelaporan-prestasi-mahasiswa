@@ -8,39 +8,30 @@ import (
 	"uas-go/app/model"
 )
 
-func GenerateJWT(user model.User, roles model.Role) (string, error) {
-	secret := os.Getenv("JWT_SECRET")
-
+func GenerateToken(user model.UserResponse) (string, error) {
 	claims := model.JWTClaims{
 		UserID:   user.ID,
 		Username: user.Username,
-		RoleName: roles.RoleName,
+		RoleName: user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(3 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString([]byte(secret))
+	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }
 
-func ParseJWT(tokenStr string) (*model.JWTClaims, error) {
-	secret := os.Getenv("JWT_SECRET")
-
-	token, err := jwt.ParseWithClaims(tokenStr, &model.JWTClaims{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
+func ParseToken(tokenString string) (*model.JWTClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &model.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 
-	if err != nil {
-		return nil, err
+	if claims, ok := token.Claims.(*model.JWTClaims); ok && token.Valid {
+		return claims, nil
 	}
 
-	claims, ok := token.Claims.(*model.JWTClaims)
-	if !ok || !token.Valid {
-		return nil, err
-	}
-
-	return claims, nil
+	return nil, err
 }
