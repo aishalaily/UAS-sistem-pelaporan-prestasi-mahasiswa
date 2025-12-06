@@ -13,6 +13,7 @@ func GenerateToken(user model.UserResponse) (string, error) {
 		UserID:   user.ID,
 		Username: user.Username,
 		RoleName: user.Role,
+		Permissions: user.Permissions,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

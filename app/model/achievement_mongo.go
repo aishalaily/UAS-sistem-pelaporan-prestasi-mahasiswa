@@ -30,3 +30,4 @@ type Attachment struct {
 	FileType  string    `bson:"fileType"`
 	UploadedAt time.Time `bson:"uploadedAt"`
 }
+

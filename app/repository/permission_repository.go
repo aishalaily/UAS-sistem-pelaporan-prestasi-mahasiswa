@@ -5,9 +5,7 @@ import (
 	"uas-go/database"
 )
 
-type PermissionRepository struct{}
-
-func (r PermissionRepository) GetPermissionsByRole(roleID string) ([]string, error) {
+func GetPermissionsByRole(roleID string) ([]string, error) {
 	query := `
 		SELECT p.name
 		FROM permissions p
@@ -21,14 +19,12 @@ func (r PermissionRepository) GetPermissionsByRole(roleID string) ([]string, err
 	}
 	defer rows.Close()
 
-	var permissions []string
-
+	var perms []string
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err == nil {
-			permissions = append(permissions, name)
-		}
+		var perm string
+		rows.Scan(&perm)
+		perms = append(perms, perm)
 	}
 
-	return permissions, nil
+	return perms, nil
 }

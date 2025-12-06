@@ -22,7 +22,8 @@ type JWTClaims struct {
 	UserID   string `json:"id"`
 	Username string `json:"username"`
 	RoleName string `json:"name"`
-
+	Permissions []string `json:"permissions"`
+	
 	jwt.RegisteredClaims
 }
 
@@ -46,11 +47,20 @@ type UserResponse struct {
 	Permissions []string `json:"permissions"`
 }
 
-type ProfileResponse struct {
-	ID          string   `json:"id"`
-	Username    string   `json:"username"`
-	FullName    string   `json:"full_name"`
-	Email       string   `json:"email"`
-	Role        string   `json:"role"`
-	IsActive    bool      `json:"is_active"`
+type CreateUserRequest struct {
+	Username     string `json:"username"`
+	Email        string `json:"email"`
+	FullName     string `json:"full_name"`
+	Password     string `json:"password"`
+	Role         string `json:"role"`
+
+	// mahasiswa
+	StudentID     string `json:"student_id"`
+	ProgramStudy  string `json:"program_study"`
+	AcademicYear  string `json:"academic_year"`
+	AdvisorID     string `json:"advisor_id"`
+
+	// dosen wali
+	NIDN       string `json:"nidn"`
+	Department string `json:"department"`
 }
