@@ -3,6 +3,7 @@ package utils
 import (
 	"os"
 	"time"
+	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
 	"uas-go/app/model"
@@ -26,13 +27,16 @@ func GenerateToken(user model.UserResponse) (string, error) {
 }
 
 func ParseToken(tokenString string) (*model.JWTClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &model.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
-	})
+    claims := &model.JWTClaims{}
 
-	if claims, ok := token.Claims.(*model.JWTClaims); ok && token.Valid {
-		return claims, nil
-	}
+    token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+        return []byte(os.Getenv("JWT_SECRET")), nil
+    })
 
-	return nil, err
+    if err != nil || !token.Valid {
+        return nil, fmt.Errorf("invalid token")
+    }
+
+    return claims, nil
 }
+
