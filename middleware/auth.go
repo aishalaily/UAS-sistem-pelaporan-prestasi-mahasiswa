@@ -29,7 +29,8 @@ func AuthRequired() fiber.Handler {
 		c.Locals("user_id", claims.UserID)
 		c.Locals("username", claims.Username)
 		role := strings.ToLower(strings.TrimSpace(claims.RoleName))
-        c.Locals("role", role)
+		role = strings.ReplaceAll(role, " ", "_")
+		c.Locals("role", role)
 		c.Locals("permissions", claims.Permissions)
 
 		return c.Next()

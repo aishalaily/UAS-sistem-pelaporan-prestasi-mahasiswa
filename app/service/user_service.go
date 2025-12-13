@@ -48,6 +48,13 @@ func CreateUser(c *fiber.Ctx) error {
 		RoleID:   roleID,
 	}
 
+	if repository.IsUsernameExists(req.Username) {
+		return c.Status(400).JSON(fiber.Map{
+			"status": "error",
+			"message": "Username already exists",
+		})
+	}
+
 	_, err = repository.CreateUser(user, passHash)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -77,14 +84,7 @@ func CreateUser(c *fiber.Ctx) error {
 		}
 		repository.CreateLecturer(lect)
 	}
-
-	if repository.IsUsernameExists(req.Username) {
-		return c.Status(400).JSON(fiber.Map{
-			"status": "error",
-			"message": "Username already exists",
-		})
-	}
-
+	
 
 	return c.JSON(fiber.Map{
 		"status": "success",

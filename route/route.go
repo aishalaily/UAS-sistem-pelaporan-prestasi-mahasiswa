@@ -26,11 +26,14 @@ func RegisterRoutes(app *fiber.App) {
 
 	ach := api.Group("/achievements", middleware.AuthRequired())
 
-	ach.Get("/", service.GetAchievements)          
-	ach.Get("/:id", service.GetAchievementDetail) 
+	ach.Get("/", middleware.RequirePermission("achievement.read"), service.GetAchievements)          
+	ach.Get("/:id", middleware.RequirePermission("achievement.read"), service.GetAchievementDetail) 
 
-	ach.Post("/", middleware.MahasiswaOnly(), service.SubmitAchievement)                 
-	ach.Put("/:id", middleware.MahasiswaOnly(), service.UpdateAchievement)                
-	ach.Post("/:id/submit", middleware.MahasiswaOnly(), service.SubmitForVerification)    
-	ach.Delete("/:id", middleware.MahasiswaOnly(), service.DeleteAchievement)            
+	ach.Post("/", middleware.MahasiswaOnly(), middleware.RequirePermission("achievement.create"), service.SubmitAchievement)                 
+	ach.Put("/:id", middleware.MahasiswaOnly(), middleware.RequirePermission("achievement.update"), service.UpdateAchievement)                
+	ach.Post("/:id/submit", middleware.MahasiswaOnly(), middleware.RequirePermission("achievement.update"), service.SubmitForVerification)    
+	ach.Delete("/:id", middleware.MahasiswaOnly(), middleware.RequirePermission("achievement.delete"), service.DeleteAchievement) 
+	
+	ach.Post("/:id/verify", middleware.DosenWaliOnly(), middleware.RequirePermission("achievement.verify"), service.VerifyAchievement)
+	ach.Post("/:id/reject", middleware.DosenWaliOnly(), middleware.RequirePermission("achievement.reject"), service.RejectAchievement)
 }

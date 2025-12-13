@@ -32,7 +32,8 @@ func GetReferenceByID(db *pgxpool.Pool, id string) (*model.AchievementReference,
 		       submitted_at, verified_at, verified_by, rejection_note,
 		       created_at, updated_at, is_deleted
 		FROM achievement_references
-		WHERE id = $1 AND is_deleted = false
+		WHERE id = $1 
+		AND is_deleted = false
 		LIMIT 1
 	`, id)
 
@@ -54,7 +55,9 @@ func GetReferenceByIDAndStudent(db *pgxpool.Pool, id, studentID string) (*model.
 		       submitted_at, verified_at, verified_by, rejection_note,
 		       created_at, updated_at, is_deleted
 		FROM achievement_references
-		WHERE id = $1 AND student_id = $2 AND is_deleted = false
+		WHERE id = $1 
+		AND student_id = $2 
+		AND is_deleted = false
 		LIMIT 1
 	`, id, studentID)
 
@@ -76,7 +79,8 @@ func SubmitForVerification(db *pgxpool.Pool, id string) error {
 		SET status = 'submitted', 
 			submitted_at = NOW(), 
 			updated_at = NOW()
-		WHERE id = $1 AND status = 'draft'
+		WHERE id = $1 
+		AND status = 'draft'
 	`, id)
 	return err
 }
@@ -86,7 +90,8 @@ func SoftDeleteReference(db *pgxpool.Pool, id, studentID string) error {
 		UPDATE achievement_references
 		SET is_deleted = true, 
 			updated_at = NOW()
-		WHERE id = $1 AND student_id = $2
+		WHERE id = $1 
+		AND student_id = $2
 	`, id, studentID)
 	return err
 }
@@ -95,7 +100,8 @@ func GetAchievementsByStudent(db *pgxpool.Pool, studentID string) ([]model.Achie
 	rows, err := db.Query(context.Background(), `
 		SELECT ar.id, ar.student_id, ar.mongo_achievement_id, ar.status, ar.created_at
 		FROM achievement_references ar
-		WHERE ar.student_id = $1 AND ar.is_deleted = false
+		WHERE ar.student_id = $1 
+		AND ar.is_deleted = false
 		ORDER BY ar.created_at DESC
 	`, studentID)
 	if err != nil {
@@ -114,17 +120,19 @@ func GetAchievementsByStudent(db *pgxpool.Pool, studentID string) ([]model.Achie
 	return res, nil
 }
 
-func GetAchievementsForStudents(db *pgxpool.Pool, students []string) ([]model.AchievementReference, error) {
-	if len(students) == 0 {
+func GetAchievementsForStudents(db *pgxpool.Pool, student []string) ([]model.AchievementReference, error) {
+	if len(student) == 0 {
 		return []model.AchievementReference{}, nil
 	}
 
 	rows, err := db.Query(context.Background(), `
 		SELECT id, student_id, mongo_achievement_id, status, created_at
 		FROM achievement_references
-		WHERE student_id = ANY($1) AND is_deleted = false
+		WHERE student_id = ANY($1) 
+		AND is_deleted = false
+		AND status != 'draft'
 		ORDER BY created_at DESC
-	`, students)
+	`, student)
 	if err != nil {
 		return nil, err
 	}
@@ -162,4 +170,30 @@ func GetAllAchievements(db *pgxpool.Pool) ([]model.AchievementReference, error) 
 		res = append(res, a)
 	}
 	return res, nil
+}
+
+func VerifyAchievement(db *pgxpool.Pool, refID, verifierID string) error {
+	_, err := db.Exec(context.Background(), `
+		UPDATE achievement_references
+		SET status = 'verified',
+		    verified_at = NOW(),
+		    verified_by = $2,
+		    updated_at = NOW()
+		WHERE id = $1 
+		AND status = 'submitted'
+	`, refID, verifierID)
+
+	return err
+}
+
+func RejectAchievement(db *pgxpool.Pool, refID, note string) error {
+	_, err := db.Exec(context.Background(), `
+		UPDATE achievement_references
+		SET status = 'rejected',
+		    rejection_note = $2,
+		    updated_at = NOW()
+		WHERE id = $1 AND status = 'submitted'
+	`, refID, note)
+
+	return err
 }

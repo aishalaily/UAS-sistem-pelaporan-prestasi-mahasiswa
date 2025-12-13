@@ -31,11 +31,11 @@ func GetAchievements(c *fiber.Ctx) error {
 	case "dosen_wali":
 		students, err := repository.GetStudentsUnderAdvisor(database.PgPool, userID)
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "failed to load advisee"})
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load advisee", "detail": err.Error()})
 		}
 		data, err := repository.GetAchievementsForStudents(database.PgPool, students)
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "failed to load achievements"})
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load achievements", "detail": err.Error()})
 		}
 		return c.JSON(fiber.Map{"status": "success", "data": data})
 
@@ -279,4 +279,76 @@ func DeleteAchievement(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "deleted"})
+}
+
+
+func VerifyAchievement(c *fiber.Ctx) error {
+	refID := c.Params("id")
+	userID := c.Locals("user_id").(string)
+
+	ref, err := repository.GetReferenceByID(database.PgPool, refID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "achievement not found"})
+	}
+
+	if ref.Status != "submitted" {
+		return c.Status(400).JSON(fiber.Map{"error": "achievement not submitted"})
+	}
+
+	allowed, err := repository.IsStudentUnderAdvisor(
+		database.PgPool,
+		userID,
+		ref.StudentID,
+	)
+	if err != nil || !allowed {
+		return c.Status(403).JSON(fiber.Map{"error": "not your advisee"})
+	}
+
+	if err := repository.VerifyAchievement(database.PgPool, refID, userID); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to verify"})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "achievement verified",
+	})
+}
+
+func RejectAchievement(c *fiber.Ctx) error {
+	refID := c.Params("id")
+	userID := c.Locals("user_id").(string)
+
+	var body struct {
+		Note string `json:"note"`
+	}
+	if err := c.BodyParser(&body); err != nil || body.Note == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "rejection note is required"})
+	}
+
+	ref, err := repository.GetReferenceByID(database.PgPool, refID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "achievement not found"})
+	}
+
+	if ref.Status != "submitted" {
+		return c.Status(400).JSON(fiber.Map{"error": "achievement not submitted"})
+	}
+
+	allowed, err := repository.IsStudentUnderAdvisor(
+		database.PgPool,
+		userID,
+		ref.StudentID,
+	)
+	if err != nil || !allowed {
+		return c.Status(403).JSON(fiber.Map{"error": "not your advisee"})
+	}
+
+	if err := repository.RejectAchievement(database.PgPool, refID, body.Note); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to reject"})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "achievement rejected",
+	})
 }
