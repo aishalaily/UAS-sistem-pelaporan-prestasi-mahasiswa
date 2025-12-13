@@ -40,3 +40,36 @@ func GetLecturerByUserID(userID string) (*model.Lecturer, error) {
 
 	return &l, nil
 }
+
+func GetAllLecturers() ([]model.LecturerResponse, error) {
+	query := `
+		SELECT 
+			l.id, u.id, u.full_name, l.nidn, l.department
+		FROM lecturers l
+		JOIN users u ON l.user_id = u.id
+		ORDER BY u.full_name ASC
+	`
+
+	rows, err := database.PgPool.Query(context.Background(), query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []model.LecturerResponse
+	for rows.Next() {
+		var l model.LecturerResponse
+		if err := rows.Scan(
+			&l.ID,
+			&l.UserID,
+			&l.FullName,
+			&l.NIDN,
+			&l.Department,
+		); err != nil {
+			return nil, err
+		}
+		res = append(res, l)
+	}
+
+	return res, nil
+}
