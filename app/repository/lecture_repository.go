@@ -18,3 +18,25 @@ func CreateLecturer(l model.Lecturer) error {
 
 	return err
 }
+
+func GetLecturerByUserID(userID string) (*model.Lecturer, error) {
+	row := database.PgPool.QueryRow(context.Background(), `
+		SELECT id, user_id, nidn, department
+		FROM lecturers
+		WHERE user_id = $1
+		LIMIT 1
+	`)
+
+	var l model.Lecturer
+	err := row.Scan(
+		&l.ID,
+		&l.UserID,
+		&l.NIDN,
+		&l.Department,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &l, nil
+}

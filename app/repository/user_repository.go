@@ -101,3 +101,106 @@ func IsUsernameExists(username string) bool {
 }
 
 
+func GetAllUsers() ([]model.User, error) {
+	rows, err := database.PgPool.Query(context.Background(), `
+		SELECT id, username, email, full_name, role_id, is_active, created_at
+		FROM users
+		ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []model.User
+	for rows.Next() {
+		var u model.User
+		err := rows.Scan(
+			&u.ID,
+			&u.Username,
+			&u.Email,
+			&u.FullName,
+			&u.RoleID,
+			&u.IsActive,
+			&u.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+
+	return users, nil
+}
+
+func GetStudentByUserID(userID string) (*model.Student, error) {
+	row := database.PgPool.QueryRow(context.Background(), `
+		SELECT id, user_id, student_id, program_study, academic_year, advisor_id
+		FROM student
+		WHERE user_id = $1
+		LIMIT 1
+	`)
+
+	var s model.Student
+	err := row.Scan(
+		&s.ID,
+		&s.UserID,
+		&s.StudentID,
+		&s.ProgramStudy,
+		&s.AcademicYear,
+		&s.AdvisorID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
+}
+
+func UpdateUser(u model.User) error {
+	query := `
+		UPDATE users
+		SET username = $2,
+		    email = $3,
+		    full_name = $4,
+		    is_active = $5,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+
+	_, err := database.PgPool.Exec(
+		context.Background(),
+		query,
+		u.ID,
+		u.Username,
+		u.Email,
+		u.FullName,
+		u.IsActive,
+	)
+
+	return err
+}
+
+func UpdateUserRole(userID, roleID string) error {
+	query := `
+		UPDATE users
+		SET role_id = $2,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+
+	_, err := database.PgPool.Exec(context.Background(), query, userID, roleID)
+	return err
+}
+
+func DeactivateUser(userID string) error {
+	query := `
+		UPDATE users
+		SET is_active = false,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+
+	_, err := database.PgPool.Exec(context.Background(), query, userID)
+	return err
+}
