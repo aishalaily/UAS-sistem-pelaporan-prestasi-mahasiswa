@@ -41,13 +41,13 @@ func RegisterRoutes(app *fiber.App) {
 		ach.Post("/:id/verify", middleware.DosenWaliOnly(), middleware.RequirePermission("achievement.verify"), service.VerifyAchievement)
 		ach.Post("/:id/reject", middleware.DosenWaliOnly(), middleware.RequirePermission("achievement.reject"), service.RejectAchievement)
 
-	students := api.Group("/students", middleware.AuthRequired(), middleware.AdminOnly())
-		students.Get("/", service.GetStudents)
+	students := api.Group("/students", middleware.AuthRequired())
+		students.Get("/", middleware.AdminOnly(), service.GetStudents)
 		students.Get("/:id", service.GetStudentByID)
 		students.Get("/:id/achievements", service.GetStudentAchievements)
-		students.Put("/:id/advisor", service.UpdateStudentAdvisor)
+		students.Put("/:id/advisor", middleware.AdminOnly(), service.UpdateStudentAdvisor)
 	
 	lecturers := api.Group("/lecturers", middleware.AuthRequired(), middleware.AdminOnly())
-		lecturers.Get("/", service.GetLecturers)
+		lecturers.Get("/", middleware.AdminOnly(), service.GetLecturers)
 		lecturers.Get("/:id/advisees", service.GetLecturerAdvisees)
 }
