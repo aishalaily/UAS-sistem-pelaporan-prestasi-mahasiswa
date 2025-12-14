@@ -5,22 +5,24 @@ import (
 )
 
 type Student struct {
-	ID           string `json:"id"`
-	UserID       string `json:"user_id"`
-	StudentID    string `json:"student_id"`
-	ProgramStudy string `json:"program_study"`
-	AcademicYear string `json:"academic_year"`
-	AdvisorID    string `json:"advisor_id"`
-	CreatedAt time.Time `json:"created_at"`
+	ID           string    `json:"id" db:"id"`               
+	UserID       string    `json:"user_id" db:"user_id"`     
+	StudentID    string    `json:"student_id" db:"student_id"`
+	ProgramStudy string    `json:"program_study" db:"program_study"`
+	AcademicYear string    `json:"academic_year" db:"academic_year"`
+	AdvisorID    string    `json:"advisor_id" db:"advisor_id"` 
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 }
 
 type StudentWithAdvisor struct {
+	StudentPK    string `json:"student_pk"` // student.id 
+
 	UserID       string `json:"user_id"`
 	Username     string `json:"username"`
 	FullName     string `json:"full_name"`
 	Email        string `json:"email"`
 
-	StudentID    string `json:"student_id"`
+	StudentID    string `json:"student_id"` // NIM
 	ProgramStudy string `json:"program_study"`
 	AcademicYear string `json:"academic_year"`
 
@@ -29,10 +31,10 @@ type StudentWithAdvisor struct {
 }
 
 type StudentAdviseeResponse struct {
-	StudentID      string `json:"student_id"`
-	UserID         string `json:"user_id"`
-	FullName       string `json:"full_name"`
-	StudentNumber  string `json:"student_number"`
-	ProgramStudy   string `json:"program_study"`
-	AcademicYear   string `json:"academic_year"`
+	StudentPK     string `json:"student_pk"`     // student.id
+	UserID        string `json:"user_id"`        // users.id
+	FullName      string `json:"full_name"`
+	StudentID     string `json:"student_id"`     // NIM
+	ProgramStudy  string `json:"program_study"`
+	AcademicYear  string `json:"academic_year"`
 }

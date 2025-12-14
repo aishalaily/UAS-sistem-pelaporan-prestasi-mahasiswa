@@ -128,7 +128,7 @@ func GetAchievementsForStudents(db *pgxpool.Pool, student []string) ([]model.Ach
 	rows, err := db.Query(context.Background(), `
 		SELECT id, student_id, mongo_achievement_id, status, created_at
 		FROM achievement_references
-		WHERE student_id = ANY($1) 
+		WHERE student_id = $1
 		AND is_deleted = false
 		AND status != 'draft'
 		ORDER BY created_at DESC

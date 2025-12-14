@@ -68,80 +68,94 @@ func IsStudentUnderAdvisor(db *pgxpool.Pool, advisorUserID, studentID string) (b
 	return exists, err
 }
 
-func GetAllStudents() ([]model.StudentWithAdvisor, error) {
-	query := `
-		SELECT 
-			u.id, u.username, u.full_name, u.email, s.student_id, s.program_study, s.academic_year, l.id AS advisor_id, u2.full_name AS advisor_name
-		FROM users u
-		JOIN student s ON s.user_id = u.id
-		LEFT JOIN lecturers l ON s.advisor_id = l.id
-		LEFT JOIN users u2 ON l.user_id = u2.id
-		JOIN roles r ON r.id = u.role_id
-		WHERE r.name = 'mahasiswa'
-		ORDER BY u.created_at DESC
-	`
-
-	rows, err := database.PgPool.Query(context.Background(), query)
+func GetAllStudents(db *pgxpool.Pool) ([]model.StudentWithAdvisor, error) {
+	rows, err := db.Query(context.Background(), `
+		SELECT
+			s.id AS student_pk,
+			u.id AS user_id,
+			u.username,
+			u.full_name,
+			u.email,
+			s.student_id,
+			s.program_study,
+			s.academic_year,
+			l.id AS advisor_id,
+			u2.full_name AS advisor_name
+		FROM student s
+		JOIN users u ON u.id = s.user_id
+		LEFT JOIN lecturers l ON l.id = s.advisor_id
+		LEFT JOIN users u2 ON u2.id = l.user_id
+		ORDER BY s.created_at DESC
+	`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var res []model.StudentWithAdvisor
+	var result []model.StudentWithAdvisor
 	for rows.Next() {
 		var s model.StudentWithAdvisor
 		if err := rows.Scan(
-			&s.UserID, 
-			&s.Username, 
-			&s.FullName, 
-			&s.Email, 
-			&s.StudentID, 
-			&s.ProgramStudy, 
-			&s.AcademicYear, 
-			&s.AdvisorID, 
+			&s.StudentPK,
+			&s.UserID,
+			&s.Username,
+			&s.FullName,
+			&s.Email,
+			&s.StudentID,
+			&s.ProgramStudy,
+			&s.AcademicYear,
+			&s.AdvisorID,
 			&s.AdvisorName,
 		); err != nil {
 			return nil, err
 		}
-		res = append(res, s)
+		result = append(result, s)
 	}
 
-	return res, nil
+	return result, nil
 }
 
-func GetStudentByID(studentID string) (*model.StudentWithAdvisor, error) {
-	query := `
-		SELECT 
-			u.id, u.username, u.full_name, u.email, s.student_id, s.program_study, s.academic_year, l.id AS advisor_id, u2.full_name AS advisor_name
-		FROM users u
-		JOIN student s ON s.user_id = u.id
-		LEFT JOIN lecturers l ON s.advisor_id = l.id
-		LEFT JOIN users u2 ON l.user_id = u2.id
+func GetStudentByID(db *pgxpool.Pool, studentID string) (*model.StudentWithAdvisor, error) {
+	row := db.QueryRow(context.Background(), `
+		SELECT
+			s.id AS student_pk,
+			u.id AS user_id,
+			u.username,
+			u.full_name,
+			u.email,
+			s.student_id,
+			s.program_study,
+			s.academic_year,
+			l.id AS advisor_id,
+			u2.full_name AS advisor_name
+		FROM student s
+		JOIN users u ON u.id = s.user_id
+		LEFT JOIN lecturers l ON l.id = s.advisor_id
+		LEFT JOIN users u2 ON u2.id = l.user_id
 		WHERE s.id = $1
 		LIMIT 1
-	`
+	`, studentID)
 
-	var res model.StudentWithAdvisor
-	err := database.PgPool.QueryRow(context.Background(), query).Scan(
-		&res.UserID,
-		&res.Username,
-		&res.FullName,
-		&res.Email,
-		&res.StudentID,
-		&res.ProgramStudy,
-		&res.AcademicYear,
-		&res.AdvisorID,
-		&res.AdvisorName,
-	)
-
-	if err != nil {
+	var s model.StudentWithAdvisor
+	if err := row.Scan(
+		&s.StudentPK,
+		&s.UserID,
+		&s.Username,
+		&s.FullName,
+		&s.Email,
+		&s.StudentID,
+		&s.ProgramStudy,
+		&s.AcademicYear,
+		&s.AdvisorID,
+		&s.AdvisorName,
+	); err != nil {
 		return nil, err
 	}
 
-	return &res, nil
+	return &s, nil
 }
 
-func UpdateStudentAdvisor(studentID, advisorID string) error {
+func UpdateStudentAdvisor(db *pgxpool.Pool, studentID, advisorID string) error {
 	query := `
 		UPDATE student
 		SET advisor_id = $2
@@ -158,17 +172,20 @@ func UpdateStudentAdvisor(studentID, advisorID string) error {
 	return err
 }
 
-func GetStudentsByAdvisor(advisorID string) ([]model.StudentAdviseeResponse, error) {
-	query := `
-		SELECT 
-			s.id, u.id, u.full_name, s.student_id, s.program_study, s.academic_year
+func GetStudentsByAdvisor(db *pgxpool.Pool, lecturerID string) ([]model.StudentAdviseeResponse, error) {
+	rows, err := db.Query(context.Background(), `
+		SELECT
+			s.id,
+			s.user_id,
+			u.full_name,
+			s.student_id,
+			s.program_study,
+			s.academic_year
 		FROM student s
-		JOIN users u ON s.user_id = u.id
+		JOIN users u ON u.id = s.user_id
 		WHERE s.advisor_id = $1
-		ORDER BY u.full_name ASC
-	`
-
-	rows, err := database.PgPool.Query(context.Background(), query, advisorID)
+		ORDER BY u.full_name
+	`, lecturerID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,10 +195,10 @@ func GetStudentsByAdvisor(advisorID string) ([]model.StudentAdviseeResponse, err
 	for rows.Next() {
 		var s model.StudentAdviseeResponse
 		if err := rows.Scan(
-			&s.StudentID,
+			&s.StudentPK,
 			&s.UserID,
 			&s.FullName,
-			&s.StudentNumber,
+			&s.StudentID,
 			&s.ProgramStudy,
 			&s.AcademicYear,
 		); err != nil {
@@ -192,3 +209,35 @@ func GetStudentsByAdvisor(advisorID string) ([]model.StudentAdviseeResponse, err
 
 	return res, nil
 }
+
+func GetStudentAchievements(db *pgxpool.Pool, studentPK string) ([]model.AchievementReference, error) {
+	rows, err := db.Query(context.Background(), `
+		SELECT id, student_id, mongo_achievement_id, status, created_at
+		FROM achievement_references
+		WHERE student_id = $1
+		  AND is_deleted = false
+		ORDER BY created_at DESC
+	`, studentPK)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []model.AchievementReference
+	for rows.Next() {
+		var a model.AchievementReference
+		if err := rows.Scan(
+			&a.ID,
+			&a.StudentID,
+			&a.MongoAchievementID,
+			&a.Status,
+			&a.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		res = append(res, a)
+	}
+
+	return res, nil
+}
+

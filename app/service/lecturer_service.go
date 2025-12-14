@@ -1,6 +1,7 @@
 package service
 
 import (
+	"uas-go/database"
 	"uas-go/app/repository"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,7 +15,7 @@ func GetLecturers(c *fiber.Ctx) error {
 		})
 	}
 
-	data, err := repository.GetAllLecturers()
+	data, err := repository.GetAllLecturers(database.PgPool)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": "failed to load lecturers",
@@ -32,25 +33,23 @@ func GetLecturerAdvisees(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	userID := c.Locals("user_id").(string)
 
-	switch role {
-	case "admin":
-
-	case "dosen_wali":
+	if role == "dosen_wali" {
 		lect, err := repository.GetLecturerByUserID(userID)
 		if err != nil || lect.ID != lecturerID {
 			return c.Status(403).JSON(fiber.Map{
 				"error": "access denied",
 			})
 		}
-
-
-	default:
+	} else if role != "admin" {
 		return c.Status(403).JSON(fiber.Map{
 			"error": "role not allowed",
 		})
 	}
 
-	data, err := repository.GetStudentsByAdvisor(lecturerID)
+	data, err := repository.GetStudentsByAdvisor(
+		database.PgPool,
+		lecturerID,
+	)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": "failed to load advisees",

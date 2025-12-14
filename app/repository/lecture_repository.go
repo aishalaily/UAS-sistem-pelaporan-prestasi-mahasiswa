@@ -4,6 +4,8 @@ import (
 	"context"
 	"uas-go/app/model"
 	"uas-go/database"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func CreateLecturer(l model.Lecturer) error {
@@ -41,16 +43,18 @@ func GetLecturerByUserID(userID string) (*model.Lecturer, error) {
 	return &l, nil
 }
 
-func GetAllLecturers() ([]model.LecturerResponse, error) {
-	query := `
-		SELECT 
-			l.id, u.id, u.full_name, l.nidn, l.department
+func GetAllLecturers(db *pgxpool.Pool) ([]model.LecturerResponse, error) {
+	rows, err := db.Query(context.Background(), `
+		SELECT
+			l.id,
+			l.user_id,
+			u.full_name,
+			l.nidn,
+			l.department
 		FROM lecturers l
-		JOIN users u ON l.user_id = u.id
-		ORDER BY u.full_name ASC
-	`
-
-	rows, err := database.PgPool.Query(context.Background(), query)
+		JOIN users u ON u.id = l.user_id
+		ORDER BY u.full_name
+	`)
 	if err != nil {
 		return nil, err
 	}
