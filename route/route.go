@@ -50,4 +50,9 @@ func RegisterRoutes(app *fiber.App) {
 	lecturers := api.Group("/lecturers", middleware.AuthRequired(), middleware.AdminOnly())
 		lecturers.Get("/", middleware.AdminOnly(), service.GetLecturers)
 		lecturers.Get("/:id/advisees", service.GetLecturerAdvisees)
+
+	reports := api.Group("/reports", middleware.AuthRequired())
+		reports.Get("/statistics", service.GetAchievementStatistics)
+		reports.Get("/statistics/id", service.GetStudentReport)
+
 }
