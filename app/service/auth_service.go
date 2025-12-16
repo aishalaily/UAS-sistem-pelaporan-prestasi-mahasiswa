@@ -117,3 +117,51 @@ func GetProfile(c *fiber.Ctx) error {
 		},
 	})
 }
+
+func RefreshToken(c *fiber.Ctx) error {
+	var body struct {
+		Token string `json:"token"`
+	}
+
+	if err := c.BodyParser(&body); err != nil || body.Token == "" {
+		return c.Status(400).JSON(fiber.Map{
+			"error": "token is required",
+		})
+	}
+
+	claims, err := utils.ParseToken(body.Token)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{
+			"error": "invalid token",
+		})
+	}
+
+	// rebuild user response dari claims
+	userResp := model.UserResponse{
+		ID:          claims.UserID,
+		Username:    claims.Username,
+		Role:        claims.RoleName,
+		Permissions: claims.Permissions,
+	}
+
+	newToken, err := utils.GenerateToken(userResp)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": "failed to generate token",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status": "success",
+		"data": fiber.Map{
+			"token": newToken,
+		},
+	})
+}
+
+func Logout(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "logged out",
+	})
+}

@@ -90,72 +90,34 @@ func GetAchievementStatsForStudents(studentIDs []string) (map[string]int, error)
 	return result, nil
 }
 
-func GetAchievementTypeStatsAdmin() (map[string]int, error) {
-	rows, err := database.PgPool.Query(context.Background(), `
-		SELECT achievement_type, COUNT(*)
-		FROM achievement_references
-		WHERE status = 'verified'
-		GROUP BY achievement_type
-	`)
+func GetAchievementTypeStatsMongo(studentIDs []string) (map[string]int, error) {
+	collection := database.MongoDB.Collection("achievements")
+
+	filter := bson.M{}
+	if len(studentIDs) > 0 {
+		filter["studentId"] = bson.M{"$in": studentIDs}
+	}
+
+	cursor, err := collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer cursor.Close(context.Background())
 
 	result := make(map[string]int)
-	for rows.Next() {
-		var typ string
-		var count int
-		rows.Scan(&typ, &count)
-		result[typ] = count
-	}
 
-	return result, nil
-}
+	for cursor.Next(context.Background()) {
+		var doc struct {
+			AchievementType string `bson:"achievementType"`
+		}
 
-func GetAchievementTypeStatsStudent(studentID string) (map[string]int, error) {
-	rows, err := database.PgPool.Query(context.Background(), `
-		SELECT achievement_type, COUNT(*)
-		FROM achievement_references
-		WHERE status = 'verified'
-		AND student_id = $1
-		GROUP BY achievement_type
-	`, studentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+		if err := cursor.Decode(&doc); err != nil {
+			continue
+		}
 
-	result := make(map[string]int)
-	for rows.Next() {
-		var typ string
-		var count int
-		rows.Scan(&typ, &count)
-		result[typ] = count
-	}
-
-	return result, nil
-}
-
-func GetAchievementTypeStatsForStudents(studentIDs []string) (map[string]int, error) {
-	rows, err := database.PgPool.Query(context.Background(), `
-		SELECT achievement_type, COUNT(*)
-		FROM achievement_references
-		WHERE status = 'verified'
-		AND student_id = ANY($1)
-		GROUP BY achievement_type
-	`, studentIDs)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	result := make(map[string]int)
-	for rows.Next() {
-		var typ string
-		var count int
-		rows.Scan(&typ, &count)
-		result[typ] = count
+		if doc.AchievementType != "" {
+			result[doc.AchievementType]++
+		}
 	}
 
 	return result, nil

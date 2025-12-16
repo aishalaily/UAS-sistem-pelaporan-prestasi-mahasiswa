@@ -20,6 +20,8 @@ func RegisterRoutes(app *fiber.App) {
 	auth := api.Group("/auth")
 		auth.Post("/login", service.Login)
 		auth.Get("/profile", middleware.AuthRequired(), service.GetProfile)
+		auth.Post("/refresh", service.RefreshToken)
+		auth.Post("/logout", middleware.AuthRequired(), service.Logout)
 
 	users := api.Group("/users")
 		users.Get("/", middleware.AuthRequired(), middleware.AdminOnly(), service.GetUsers)
@@ -53,6 +55,6 @@ func RegisterRoutes(app *fiber.App) {
 
 	reports := api.Group("/reports", middleware.AuthRequired())
 		reports.Get("/statistics", service.GetAchievementStatistics)
-		reports.Get("/statistics/id", service.GetStudentReport)
+		reports.Get("/student/id", service.GetStudentReport)
 
 }

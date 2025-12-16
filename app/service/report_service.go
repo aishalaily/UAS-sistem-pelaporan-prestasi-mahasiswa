@@ -25,22 +25,15 @@ func GetAchievementStatistics(c *fiber.Ctx) error {
 	case "admin":
 		byPeriod, err = repository.GetAchievementStatsAdmin()
 		if err != nil {
-			break
+			 return c.Status(500).JSON(fiber.Map{ "error": "failed to load statistics"})
 		}
-
-		byType, err = repository.GetAchievementTypeStatsAdmin()
+		byType, err = repository.GetAchievementTypeStatsMongo(nil)
 		if err != nil {
-			break
+			 return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
 		}
-
 		topStudents, err = repository.GetTopStudents(5)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "failed to load top students"})
-		}
-
-		competition, err = repository.GetCompetitionLevelDistribution(nil)
-		if err != nil {
-			break
 		}
 
 	case "mahasiswa":
@@ -51,15 +44,15 @@ func GetAchievementStatistics(c *fiber.Ctx) error {
 
 		byPeriod, err = repository.GetAchievementStatsStudent(studentID)
 		if err != nil {
-			break
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
 		}
-		byType, err = repository.GetAchievementTypeStatsStudent(studentID)
+		byType, err = repository.GetAchievementTypeStatsMongo([]string{studentID})
 		if err != nil {
-			break
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
 		}
 		competition, err = repository.GetCompetitionLevelDistribution([]string{studentID})
 		if err != nil {
-			break
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load competition distribution"})
 		}
 
 	case "dosen_wali":
@@ -70,11 +63,11 @@ func GetAchievementStatistics(c *fiber.Ctx) error {
 
 		byPeriod, err = repository.GetAchievementStatsForStudents(studentIDs)
 		if err != nil {
-			break
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
 		}
-		byType, err = repository.GetAchievementTypeStatsForStudents(studentIDs)
+		byType, err = repository.GetAchievementTypeStatsMongo(studentIDs)
 		if err != nil {
-			break
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
 		}
 		competition, err = repository.GetCompetitionLevelDistribution(studentIDs)
 		if err != nil {
@@ -143,7 +136,7 @@ func GetStudentReport(c *fiber.Ctx) error {
 		})
 	}
 
-	byType, err := repository.GetAchievementTypeStatsStudent(studentID)
+	byType, err := repository.GetAchievementTypeStatsMongo([]string{studentID})
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": "failed to load statistics",
