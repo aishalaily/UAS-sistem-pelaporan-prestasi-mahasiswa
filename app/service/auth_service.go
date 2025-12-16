@@ -136,7 +136,6 @@ func RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	// rebuild user response dari claims
 	userResp := model.UserResponse{
 		ID:          claims.UserID,
 		Username:    claims.Username,

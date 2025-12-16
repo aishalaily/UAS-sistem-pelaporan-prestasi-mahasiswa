@@ -174,7 +174,6 @@ func GetCompetitionLevelDistribution(studentIDs []string) (map[string]int, error
 			continue
 		}
 
-		// ambil level kompetisi
 		if level, ok := doc.Details["level"].(string); ok {
 			result[level]++
 		}
