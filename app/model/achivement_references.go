@@ -49,10 +49,15 @@ type AchievementRequest struct {
 	Tags            []string               `json:"tags"`
 }
 
+type VerifyAchievementRequest struct {
+	Points int `json:"points"`
+}
+
 type AchievementHistory struct {
 	Status    string     `json:"status"`
 	ChangedAt time.Time  `json:"changed_at"`
-	ActorID   *string    `json:"actor_id"`
+	ActorID   *string    `json:"actor_id,omitempty"`
+	ActorName *string    `json:"actor_name,omitempty"`
 	Note      *string    `json:"note"`
 }
 

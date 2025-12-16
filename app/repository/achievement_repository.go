@@ -128,7 +128,7 @@ func GetAchievementsForStudents(db *pgxpool.Pool, student []string) ([]model.Ach
 	rows, err := db.Query(context.Background(), `
 		SELECT id, student_id, mongo_achievement_id, status, created_at
 		FROM achievement_references
-		WHERE student_id = $1
+		WHERE student_id = ANY($1)
 		AND is_deleted = false
 		AND status != 'draft'
 		ORDER BY created_at DESC
@@ -172,16 +172,17 @@ func GetAllAchievements(db *pgxpool.Pool) ([]model.AchievementReference, error) 
 	return res, nil
 }
 
-func VerifyAchievement(db *pgxpool.Pool, refID, verifierID string) error {
+func VerifyAchievement(db *pgxpool.Pool, refID string, points int, verifierID string) error {
 	_, err := db.Exec(context.Background(), `
 		UPDATE achievement_references
 		SET status = 'verified',
+		    points = $2,
 		    verified_at = NOW(),
-		    verified_by = $2,
+		    verified_by = $3,
 		    updated_at = NOW()
-		WHERE id = $1 
-		AND status = 'submitted'
-	`, refID, verifierID)
+		WHERE id = $1
+		  AND status = 'submitted'
+	`, refID, points, verifierID)
 
 	return err
 }

@@ -261,6 +261,13 @@ func VerifyAchievement(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	userID := c.Locals("user_id").(string)
 
+	var body model.VerifyAchievementRequest
+	if err := c.BodyParser(&body); err != nil || body.Points <= 0 {
+		return c.Status(400).JSON(fiber.Map{
+			"error": "points is required and must be > 0",
+		})
+	}
+
 	ref, err := repository.GetReferenceByID(database.PgPool, refID)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "achievement not found"})
@@ -279,13 +286,19 @@ func VerifyAchievement(c *fiber.Ctx) error {
 		return c.Status(403).JSON(fiber.Map{"error": "not your advisee"})
 	}
 
-	if err := repository.VerifyAchievement(database.PgPool, refID, userID); err != nil {
+	if err := repository.VerifyAchievement(
+		database.PgPool,
+		refID,
+		body.Points,
+		userID,
+	); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "failed to verify"})
 	}
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "achievement verified",
+		"points":  body.Points,
 	})
 }
 
@@ -341,13 +354,46 @@ func RejectAchievement(c *fiber.Ctx) error {
 
 func GetAchievementHistory(c *fiber.Ctx) error {
 	refID := c.Params("id")
+	role := c.Locals("role").(string)
+	userID := c.Locals("user_id").(string)
 
 	ref, err := repository.GetReferenceByID(database.PgPool, refID)
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "achievement not found"})
+		return c.Status(404).JSON(fiber.Map{
+			"error": "achievement not found",
+		})
 	}
 
-	history := []model.AchievementHistory{}
+	switch role {
+	case "mahasiswa":
+		studentID, err := repository.GetStudentIDByUserID(database.PgPool, userID)
+		if err != nil || studentID != ref.StudentID {
+			return c.Status(403).JSON(fiber.Map{"error": "access denied"})
+		}
+
+	case "dosen_wali":
+		allowed, err := repository.IsStudentUnderAdvisor(
+			database.PgPool,
+			userID,
+			ref.StudentID,
+		)
+		if err != nil || !allowed {
+			return c.Status(403).JSON(fiber.Map{"error": "not your advisee"})
+		}
+
+	case "admin":
+		// allowed
+
+	default:
+		return c.Status(403).JSON(fiber.Map{"error": "role not allowed"})
+	}
+
+	var history []model.AchievementHistory
+
+	history = append(history, model.AchievementHistory{
+		Status:    "draft",
+		ChangedAt: ref.CreatedAt,
+	})
 
 	if ref.SubmittedAt != nil {
 		history = append(history, model.AchievementHistory{
@@ -356,11 +402,32 @@ func GetAchievementHistory(c *fiber.Ctx) error {
 		})
 	}
 
-	if ref.VerifiedAt != nil {
+	getActorName := func(actorID *string) *string {
+		if actorID == nil {
+			return nil
+		}
+		user, err := repository.GetUserByID(*actorID)
+		if err != nil {
+			return nil
+		}
+		return &user.FullName
+	}
+
+	if ref.VerifiedAt != nil && ref.Status == "verified" {
 		history = append(history, model.AchievementHistory{
-			Status:    ref.Status,
+			Status:    "verified",
 			ChangedAt: *ref.VerifiedAt,
 			ActorID:   ref.VerifiedBy,
+			ActorName: getActorName(ref.VerifiedBy),
+		})
+	}
+
+	if ref.Status == "rejected" && ref.RejectionNote != nil {
+		history = append(history, model.AchievementHistory{
+			Status:    "rejected",
+			ChangedAt: ref.UpdatedAt,
+			ActorID:   ref.VerifiedBy,
+			ActorName: getActorName(ref.VerifiedBy),
 			Note:      ref.RejectionNote,
 		})
 	}

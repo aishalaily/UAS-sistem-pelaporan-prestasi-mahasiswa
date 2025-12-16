@@ -125,7 +125,7 @@ func GetAchievementTypeStatsMongo(studentIDs []string) (map[string]int, error) {
 
 func GetTopStudents(limit int) ([]model.TopStudent, error) {
 	rows, err := database.PgPool.Query(context.Background(), `
-		SELECT student_id, COUNT(*) AS total
+		SELECT student_id, SUM(points) AS total
 		FROM achievement_references
 		WHERE status = 'verified'
 		GROUP BY student_id

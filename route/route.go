@@ -58,6 +58,6 @@ func RegisterRoutes(app *fiber.App) {
 
 	reports := api.Group("/reports", middleware.AuthRequired())
 		reports.Get("/statistics", service.GetAchievementStatistics)
-		reports.Get("/student/id", service.GetStudentReport)
+		reports.Get("/student/:id", service.GetStudentReport)
 
 }
