@@ -99,47 +99,23 @@ func SubmitAchievement(c *fiber.Ctx) error {
 		return c.Status(403).JSON(fiber.Map{"error": "student profile not found"})
 	}
 
-	achievementType := c.FormValue("achievementType")
-	title := c.FormValue("title")
-	description := c.FormValue("description")
-	if achievementType == "" || title == "" {
+	var req model.AchievementRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+
+	if req.AchievementType == "" || req.Title == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "achievementType & title are required"})
-	}
-
-	var details map[string]interface{}
-	if err := json.Unmarshal([]byte(c.FormValue("details")), &details); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "invalid details JSON"})
-	}
-
-	var tags []string
-	_ = json.Unmarshal([]byte(c.FormValue("tags")), &tags)
-
-	form, _ := c.MultipartForm()
-	var attachments []model.AchievementAttachment
-	if form != nil {
-		for _, f := range form.File["documents"] {
-			filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), f.Filename)
-			savePath := "./uploads/" + filename
-			if err := c.SaveFile(f, savePath); err != nil {
-				return c.Status(500).JSON(fiber.Map{"error": "failed to save file"})
-			}
-			attachments = append(attachments, model.AchievementAttachment{
-				FileName:   filename,
-				FileURL:    "/uploads/" + filename,
-				FileType:   f.Header.Get("Content-Type"),
-				UploadedAt: time.Now(),
-			})
-		}
 	}
 
 	mongoPayload := model.AchievementMongo{
 		StudentID:       studentID,
-		AchievementType: achievementType,
-		Title:           title,
-		Description:     description,
-		Details:         details,
-		Tags:            tags,
-		Attachments:     attachments,
+		AchievementType: req.AchievementType,
+		Title:           req.Title,
+		Description:     req.Description,
+		Details:         req.Details,
+		Tags:            req.Tags,
+		Attachments:     []model.AchievementAttachment{}, // kosong dulu
 		Points:          0,
 	}
 
@@ -156,10 +132,9 @@ func SubmitAchievement(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"status": "success",
 		"data": fiber.Map{
-			"id":         refID,
-			"mongo_id":   mongoID,
-			"student_id": studentID,
-			"status":     "draft",
+			"id":       refID,
+			"mongo_id": mongoID,
+			"status":   "draft",
 		},
 	})
 }
@@ -350,5 +325,81 @@ func RejectAchievement(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "achievement rejected",
+	})
+}
+
+func GetAchievementHistory(c *fiber.Ctx) error {
+	refID := c.Params("id")
+
+	ref, err := repository.GetReferenceByID(database.PgPool, refID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "achievement not found"})
+	}
+
+	history := []model.AchievementHistory{}
+
+	if ref.SubmittedAt != nil {
+		history = append(history, model.AchievementHistory{
+			Status:    "submitted",
+			ChangedAt: *ref.SubmittedAt,
+		})
+	}
+
+	if ref.VerifiedAt != nil {
+		history = append(history, model.AchievementHistory{
+			Status:    ref.Status,
+			ChangedAt: *ref.VerifiedAt,
+			ActorID:   ref.VerifiedBy,
+			Note:      ref.RejectionNote,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status": "success",
+		"data":   history,
+	})
+}
+
+func UploadAchievementAttachment(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+	refID := c.Params("id")
+
+	studentID, err := repository.GetStudentIDByUserID(database.PgPool, userID)
+	if err != nil {
+		return c.Status(403).JSON(fiber.Map{"error": "student not found"})
+	}
+
+	ref, err := repository.GetReferenceByIDAndStudent(database.PgPool, refID, studentID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "achievement not found"})
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil || len(form.File["file"]) == 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "file is required"})
+	}
+
+	file := form.File["file"][0]
+	filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), file.Filename)
+	path := "./uploads/" + filename
+
+	if err := c.SaveFile(file, path); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to save file"})
+	}
+
+	attachment := model.AchievementAttachment{
+		FileName:   filename,
+		FileURL:    "/uploads/" + filename,
+		FileType:   file.Header.Get("Content-Type"),
+		UploadedAt: time.Now(),
+	}
+
+	if err := repository.AddAchievementAttachment(ref.MongoAchievementID, attachment); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to attach file"})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "file uploaded",
 	})
 }

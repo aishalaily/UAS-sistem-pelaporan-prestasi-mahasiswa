@@ -49,3 +49,19 @@ func UpdateAchievementMongo(id string, update model.AchievementMongo) error {
 	)
 	return err
 }
+
+func AddAchievementAttachment(mongoID string, attachment model.AchievementAttachment) error {
+	_, err := achievementCollection().UpdateOne(
+		context.Background(),
+		bson.M{"_id": mongoID},
+		bson.M{
+			"$push": bson.M{
+				"attachments": attachment,
+			},
+			"$set": bson.M{
+				"updatedAt": time.Now(),
+			},
+		},
+	)
+	return err
+}

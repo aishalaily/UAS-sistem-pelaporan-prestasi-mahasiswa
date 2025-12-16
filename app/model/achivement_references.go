@@ -48,3 +48,10 @@ type AchievementRequest struct {
 	Details         map[string]interface{} `json:"details"`
 	Tags            []string               `json:"tags"`
 }
+
+type AchievementHistory struct {
+	Status    string     `json:"status"`
+	ChangedAt time.Time  `json:"changed_at"`
+	ActorID   *string    `json:"actor_id"`
+	Note      *string    `json:"note"`
+}

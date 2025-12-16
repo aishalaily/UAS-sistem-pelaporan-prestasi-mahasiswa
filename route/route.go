@@ -43,6 +43,9 @@ func RegisterRoutes(app *fiber.App) {
 		ach.Post("/:id/verify", middleware.DosenWaliOnly(), middleware.RequirePermission("achievement.verify"), service.VerifyAchievement)
 		ach.Post("/:id/reject", middleware.DosenWaliOnly(), middleware.RequirePermission("achievement.reject"), service.RejectAchievement)
 
+		ach.Get("/:id/history", service.GetAchievementHistory)
+		ach.Post("/:id/attachments", middleware.MahasiswaOnly(), service.UploadAchievementAttachment)
+
 	students := api.Group("/students", middleware.AuthRequired())
 		students.Get("/", middleware.AdminOnly(), service.GetStudents)
 		students.Get("/:id", service.GetStudentByID)
