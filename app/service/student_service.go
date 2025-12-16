@@ -3,6 +3,7 @@ package service
 import (
 	"uas-go/app/repository"
 	"uas-go/database"
+	"uas-go/app/model"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -131,39 +132,37 @@ func GetStudentAchievements(c *fiber.Ctx) error {
 }
 
 func UpdateStudentAdvisor(c *fiber.Ctx) error {
-	role := c.Locals("role").(string)
-	if role != "admin" {
-		return c.Status(403).JSON(fiber.Map{
-			"error": "admin only",
-		})
-	}
+    role := c.Locals("role").(string)
+    if role != "admin" {
+        return c.Status(403).JSON(fiber.Map{
+            "error": "admin only",
+        })
+    }
 
-	studentPK := c.Params("id")
+    studentPK := c.Params("id")
 
-	var body struct {
-		AdvisorID string `json:"advisor_id"`//DTO 
-	}
-	if err := c.BodyParser(&body); err != nil || body.AdvisorID == "" {
-		return c.Status(400).JSON(fiber.Map{
-			"error": "advisor_id is required",
-		})
-	}
+    var body model.UpdateStudentAdvisorRequest
+    if err := c.BodyParser(&body); err != nil || body.AdvisorID == "" {
+        return c.Status(400).JSON(fiber.Map{
+            "error": "advisor_id is required",
+        })
+    }
 
-	err := repository.UpdateStudentAdvisor(
-		database.PgPool,
-		studentPK,
-		body.AdvisorID,
-	)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": "failed to update advisor",
-		})
-	}
+    err := repository.UpdateStudentAdvisor(
+        database.PgPool,
+        studentPK,
+        body.AdvisorID,
+    )
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{
+            "error": "failed to update advisor",
+        })
+    }
 
-	return c.JSON(fiber.Map{
-		"status":  "success",
-		"message": "advisor updated",
-	})
+    return c.JSON(fiber.Map{
+        "status":  "success",
+        "message": "advisor updated",
+    })
 }
 
 

@@ -197,18 +197,13 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	var body struct {
-		Username  *string `json:"username"`
-		Email     *string `json:"email"`
-		FullName  *string `json:"full_name"`
-		IsActive  *bool   `json:"is_active"`
-	}
+	var body model.UpdateUserRequest
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"error": "invalid request body",
 		})
 	}
-
+	
 	if body.Username != nil {
 		user.Username = *body.Username
 	}
@@ -244,9 +239,7 @@ func UpdateUserRole(c *fiber.Ctx) error {
 
 	userID := c.Params("id")
 
-	var body struct {
-		Role string `json:"role"`
-	}
+	var body model.UpdateUserRoleRequest
 	if err := c.BodyParser(&body); err != nil || body.Role == "" {
 		return c.Status(400).JSON(fiber.Map{
 			"error": "role is required",

@@ -38,3 +38,7 @@ type StudentAdviseeResponse struct {
 	ProgramStudy  string `json:"program_study"`
 	AcademicYear  string `json:"academic_year"`
 }
+
+type UpdateStudentAdvisorRequest struct {
+    AdvisorID string `json:"advisor_id"`
+}

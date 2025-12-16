@@ -55,3 +55,7 @@ type AchievementHistory struct {
 	ActorID   *string    `json:"actor_id"`
 	Note      *string    `json:"note"`
 }
+
+type RejectAchievementRequest struct {
+	Note string `json:"note"`
+}

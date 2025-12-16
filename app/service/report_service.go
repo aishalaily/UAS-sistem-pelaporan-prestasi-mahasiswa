@@ -12,64 +12,66 @@ func GetAchievementStatistics(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	userID := c.Locals("user_id").(string)
 
-	var (
-		byPeriod 	map[string]int
-		byType  	map[string]int
-		topStudents []model.TopStudent
-		competition map[string]int
-		err     	error
-	)
+	var result model.AchievementStatistics
 
 	switch role {
 
 	case "admin":
-		byPeriod, err = repository.GetAchievementStatsAdmin()
+		var err error
+
+		result.ByPeriod, err = repository.GetAchievementStatsAdmin()
 		if err != nil {
-			 return c.Status(500).JSON(fiber.Map{ "error": "failed to load statistics"})
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load period statistics"})
 		}
-		byType, err = repository.GetAchievementTypeStatsMongo(nil)
+
+		result.ByType, err = repository.GetAchievementTypeStatsMongo(nil)
 		if err != nil {
-			 return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load type statistics"})
 		}
-		topStudents, err = repository.GetTopStudents(5)
+
+		result.TopStudents, err = repository.GetTopStudents(5)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "failed to load top students"})
 		}
 
 	case "mahasiswa":
-		studentID, err2 := repository.GetStudentIDByUserID(database.PgPool, userID)
-		if err2 != nil {
+		studentID, err := repository.GetStudentIDByUserID(database.PgPool, userID)
+		if err != nil {
 			return c.Status(403).JSON(fiber.Map{"error": "student not found"})
 		}
 
-		byPeriod, err = repository.GetAchievementStatsStudent(studentID)
+		result.ByPeriod, err = repository.GetAchievementStatsStudent(studentID)
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load period statistics"})
 		}
-		byType, err = repository.GetAchievementTypeStatsMongo([]string{studentID})
+
+		result.ByType, err = repository.GetAchievementTypeStatsMongo([]string{studentID})
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load type statistics"})
 		}
-		competition, err = repository.GetCompetitionLevelDistribution([]string{studentID})
+
+		result.Competition, err = repository.GetCompetitionLevelDistribution([]string{studentID})
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "failed to load competition distribution"})
 		}
 
 	case "dosen_wali":
-		studentIDs, err2 := repository.GetStudentsUnderAdvisor(database.PgPool, userID)
-		if err2 != nil {
+		studentIDs, err := repository.GetStudentsUnderAdvisor(database.PgPool, userID)
+		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "failed to load advisees"})
 		}
 
-		byPeriod, err = repository.GetAchievementStatsForStudents(studentIDs)
+		result.ByPeriod, err = repository.GetAchievementStatsForStudents(studentIDs)
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load period statistics"})
 		}
-		byType, err = repository.GetAchievementTypeStatsMongo(studentIDs)
+
+		result.ByType, err = repository.GetAchievementTypeStatsMongo(studentIDs)
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
+			return c.Status(500).JSON(fiber.Map{"error": "failed to load type statistics"})
 		}
-		competition, err = repository.GetCompetitionLevelDistribution(studentIDs)
+
+		result.Competition, err = repository.GetCompetitionLevelDistribution(studentIDs)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "failed to load competition distribution"})
 		}
@@ -78,18 +80,9 @@ func GetAchievementStatistics(c *fiber.Ctx) error {
 		return c.Status(403).JSON(fiber.Map{"error": "role not allowed"})
 	}
 
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "failed to load statistics"})
-	}
-
 	return c.JSON(fiber.Map{
 		"status": "success",
-		"data": fiber.Map{
-			"by_period": byPeriod,
-			"by_type": byType,
-			"top_students": topStudents,
-			"competition_distribution": competition,
-		},
+		"data":   result,
 	})
 }
 

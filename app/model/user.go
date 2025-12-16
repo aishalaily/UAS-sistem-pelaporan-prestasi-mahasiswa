@@ -38,6 +38,10 @@ type LoginResponse struct {
 	User         UserResponse `json:"user"`
 }
 
+type RefreshTokenRequest struct {
+	Token string `json:"token"`
+}
+
 type UserResponse struct {
 	ID          string   `json:"id"`
 	Username    string   `json:"username"`
@@ -63,4 +67,11 @@ type CreateUserRequest struct {
 	// dosen wali
 	NIDN       string `json:"nidn"`
 	Department string `json:"department"`
+}
+
+type UpdateUserRequest struct {
+	Username *string `json:"username"`
+	Email    *string `json:"email"`
+	FullName *string `json:"full_name"`
+	IsActive *bool   `json:"is_active"`
 }

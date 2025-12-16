@@ -119,9 +119,7 @@ func GetProfile(c *fiber.Ctx) error {
 }
 
 func RefreshToken(c *fiber.Ctx) error {
-	var body struct {
-		Token string `json:"token"`
-	}
+	var body model.RefreshTokenRequest
 
 	if err := c.BodyParser(&body); err != nil || body.Token == "" {
 		return c.Status(400).JSON(fiber.Map{
