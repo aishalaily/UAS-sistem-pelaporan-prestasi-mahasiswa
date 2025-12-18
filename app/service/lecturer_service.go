@@ -7,6 +7,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// GetLecturers godoc
+// @Summary Get all lecturers
+// @Description Admin can view all lecturers
+// @Tags Lecturers
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /lecturers [get]
 func GetLecturers(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "admin" {
@@ -28,6 +38,17 @@ func GetLecturers(c *fiber.Ctx) error {
 	})
 }
 
+// GetLecturerAdvisees godoc
+// @Summary Get lecturer advisees
+// @Description Get students supervised by lecturer (Admin or Lecturer himself)
+// @Tags Lecturers
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Lecturer ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /lecturers/{id}/advisees [get]
 func GetLecturerAdvisees(c *fiber.Ctx) error {
 	lecturerID := c.Params("id")
 	role := c.Locals("role").(string)

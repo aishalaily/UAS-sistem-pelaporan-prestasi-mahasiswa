@@ -9,6 +9,17 @@ import (
 	"uas-go/utils"
 )
 
+// Login godoc
+// @Summary Login user
+// @Description Authenticate user and return JWT token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param body body model.LoginRequest true "Login payload"
+// @Success 200 {object} model.LoginResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /auth/login [post]
 func Login(c *fiber.Ctx) error {
 	var req model.LoginRequest
 
@@ -70,7 +81,15 @@ func Login(c *fiber.Ctx) error {
 	})
 }
 
-
+// GetProfile godoc
+// @Summary Get user profile
+// @Description Get authenticated user profile
+// @Tags Authentication
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} model.UserResponse
+// @Failure 401 {object} map[string]string
+// @Router /auth/profile [get]
 func GetProfile(c *fiber.Ctx) error {
 
 	userID := c.Locals("user_id")
@@ -118,6 +137,17 @@ func GetProfile(c *fiber.Ctx) error {
 	})
 }
 
+// RefreshToken godoc
+// @Summary Refresh JWT token
+// @Description Generate new token from old token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param body body model.RefreshTokenRequest true "Refresh token payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /auth/refresh [post]
 func RefreshToken(c *fiber.Ctx) error {
 	var body model.RefreshTokenRequest
 
@@ -156,6 +186,14 @@ func RefreshToken(c *fiber.Ctx) error {
 	})
 }
 
+// Logout godoc
+// @Summary Logout user
+// @Description Logout user (client-side token discard)
+// @Tags Authentication
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Router /auth/logout [post]
 func Logout(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"status":  "success",

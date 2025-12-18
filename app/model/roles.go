@@ -11,6 +11,3 @@ type Role struct {
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 }
 
-type UpdateUserRoleRequest struct {
-	Role string `json:"role"`
-}

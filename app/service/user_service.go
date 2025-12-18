@@ -10,6 +10,15 @@ import (
 	"uas-go/utils"
 )
 
+// GetUsers godoc
+// @Summary Get all users
+// @Description Get list of all users (Admin only)
+// @Tags Users
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {array} model.User
+// @Failure 403 {object} map[string]string
+// @Router /users [get]
 func GetUsers(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "admin" {
@@ -46,6 +55,17 @@ func GetUsers(c *fiber.Ctx) error {
 	})
 }
 
+// CreateUser godoc
+// @Summary Create new user
+// @Description Create user and assign role (Admin only)
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body model.CreateUserRequest true "Create user payload"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Router /users [post]
 func CreateUser(c *fiber.Ctx) error {
 	var req model.CreateUserRequest
 
@@ -131,6 +151,16 @@ func CreateUser(c *fiber.Ctx) error {
 	})
 }
 
+// GetUserDetail godoc
+// @Summary Get user detail
+// @Description Get user detail by ID (Admin only)
+// @Tags Users
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 404 {object} map[string]string
+// @Router /users/{id} [get]
 func GetUserDetail(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "admin" {
@@ -180,6 +210,18 @@ func GetUserDetail(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateUser godoc
+// @Summary Update user
+// @Description Update user basic information (Admin only)
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param body body model.UpdateUserRequest true "Update user payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /users/{id} [put]
 func UpdateUser(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "admin" {
@@ -229,6 +271,18 @@ func UpdateUser(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateUserRole godoc
+// @Summary Update user role
+// @Description Change user role and create related profile (Admin only)
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param body body model.UpdateUserRoleRequest true "Update role payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /users/{id}/role [put]
 func UpdateUserRole(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "admin" {
@@ -302,6 +356,16 @@ func UpdateUserRole(c *fiber.Ctx) error {
 	})
 }
 
+// DeleteUser godoc
+// @Summary Deactivate user
+// @Description Soft delete (deactivate) user (Admin only)
+// @Tags Users
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /users/{id} [delete]
 func DeleteUser(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "admin" {

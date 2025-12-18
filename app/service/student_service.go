@@ -8,6 +8,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// GetStudents godoc
+// @Summary Get all students
+// @Description Admin get all students
+// @Tags Students
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Router /students [get]
 func GetStudents(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 
@@ -30,6 +39,16 @@ func GetStudents(c *fiber.Ctx) error {
 	})
 }
 
+// GetStudentByID godoc
+// @Summary Get student detail
+// @Description Get student detail by ID (Admin, Mahasiswa own, Dosen Wali advisee)
+// @Tags Students
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Student ID (PK)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Router /students/{id} [get]
 func GetStudentByID(c *fiber.Ctx) error {
 	studentPK := c.Params("id")
 	role := c.Locals("role").(string)
@@ -44,7 +63,6 @@ func GetStudentByID(c *fiber.Ctx) error {
 
 	switch role {
 	case "admin":
-		// full access
 
 	case "mahasiswa":
 		if student.UserID != userID {
@@ -77,6 +95,16 @@ func GetStudentByID(c *fiber.Ctx) error {
 	})
 }
 
+// GetStudentAchievements godoc
+// @Summary Get student achievements
+// @Description Get achievements of a student
+// @Tags Students
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Student ID (PK)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Router /students/{id}/achievements [get]
 func GetStudentAchievements(c *fiber.Ctx) error {
 	studentPK := c.Params("id")
 	role := c.Locals("role").(string)
@@ -91,7 +119,6 @@ func GetStudentAchievements(c *fiber.Ctx) error {
 
 	switch role {
 	case "admin":
-		// allowed
 
 	case "mahasiswa":
 		if student.UserID != userID {
@@ -131,6 +158,18 @@ func GetStudentAchievements(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateStudentAdvisor godoc
+// @Summary Update student advisor
+// @Description Assign or update advisor for student (Admin only)
+// @Tags Students
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Student ID (PK)"
+// @Param body body model.UpdateStudentAdvisorRequest true "Advisor payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /students/{id}/advisor [put]
 func UpdateStudentAdvisor(c *fiber.Ctx) error {
     role := c.Locals("role").(string)
     if role != "admin" {
@@ -164,5 +203,3 @@ func UpdateStudentAdvisor(c *fiber.Ctx) error {
         "message": "advisor updated",
     })
 }
-
-

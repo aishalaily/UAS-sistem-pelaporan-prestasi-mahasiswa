@@ -8,6 +8,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// GetAchievementStatistics godoc
+// @Summary Get achievement statistics
+// @Description Get achievement statistics based on role (Admin, Lecturer, Student)
+// @Tags Reports & Analytics
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} model.AchievementStatistics
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /reports/statistics [get]
 func GetAchievementStatistics(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	userID := c.Locals("user_id").(string)
@@ -86,6 +96,17 @@ func GetAchievementStatistics(c *fiber.Ctx) error {
 	})
 }
 
+// GetStudentReport godoc
+// @Summary Get student achievement report
+// @Description Get achievement report for a specific student
+// @Tags Reports & Analytics
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Student ID"
+// @Success 200 {object} model.AchievementStatistics
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /reports/student/{id} [get]
 func GetStudentReport(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	userID := c.Locals("user_id").(string)

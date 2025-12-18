@@ -12,6 +12,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// GetAchievements godoc
+// @Summary Get achievements
+// @Description Get achievements list based on role (Mahasiswa, Dosen Wali, Admin)
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Router /achievements [get]
 func GetAchievements(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	userID := c.Locals("user_id").(string)
@@ -51,6 +60,16 @@ func GetAchievements(c *fiber.Ctx) error {
 	}
 }
 
+// GetAchievementDetail godoc
+// @Summary Get achievement detail
+// @Description Get achievement detail by reference ID
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Achievement Reference ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 404 {object} map[string]string
+// @Router /achievements/{id} [get]
 func GetAchievementDetail(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	role := c.Locals("role").(string)
@@ -91,6 +110,17 @@ func GetAchievementDetail(c *fiber.Ctx) error {
 	})
 }
 
+// SubmitAchievement godoc
+// @Summary Create achievement
+// @Description Create new achievement (Mahasiswa only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body model.AchievementRequest true "Achievement payload"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Router /achievements [post]
 func SubmitAchievement(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
 
@@ -139,6 +169,15 @@ func SubmitAchievement(c *fiber.Ctx) error {
 	})
 }
 
+// SubmitForVerification godoc
+// @Summary Submit achievement
+// @Description Submit achievement for verification (Mahasiswa only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Achievement Reference ID"
+// @Success 200 {object} map[string]string
+// @Router /achievements/{id}/submit [post]
 func SubmitForVerification(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	userID := c.Locals("user_id").(string)
@@ -164,6 +203,17 @@ func SubmitForVerification(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "submitted"})
 }
 
+// UpdateAchievement godoc
+// @Summary Update achievement
+// @Description Update draft achievement (Mahasiswa only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path string true "Achievement Reference ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /achievements/{id} [put]
 func UpdateAchievement(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	userID := c.Locals("user_id").(string)
@@ -231,6 +281,16 @@ func UpdateAchievement(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "updated"})
 }
 
+// DeleteAchievement godoc
+// @Summary Delete achievement
+// @Description Delete draft achievement (Mahasiswa only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Achievement Reference ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /achievements/{id} [delete]
 func DeleteAchievement(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	userID := c.Locals("user_id").(string)
@@ -256,7 +316,18 @@ func DeleteAchievement(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "deleted"})
 }
 
-
+// VerifyAchievement godoc
+// @Summary Verify achievement
+// @Description Verify achievement and assign points (Dosen Wali only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Achievement Reference ID"
+// @Param body body model.VerifyAchievementRequest true "Verification payload"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Router /achievements/{id}/verify [post]
 func VerifyAchievement(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	userID := c.Locals("user_id").(string)
@@ -302,6 +373,18 @@ func VerifyAchievement(c *fiber.Ctx) error {
 	})
 }
 
+// VerifyAchievement godoc
+// @Summary Verify achievement
+// @Description Verify achievement and assign points (Dosen Wali only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Achievement Reference ID"
+// @Param body body model.VerifyAchievementRequest true "Verification payload"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Router /achievements/{id}/verify [post]
 func RejectAchievement(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	userID := c.Locals("user_id").(string)
@@ -352,6 +435,15 @@ func RejectAchievement(c *fiber.Ctx) error {
 	})
 }
 
+// GetAchievementHistory godoc
+// @Summary Get achievement history
+// @Description Get achievement status history
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Achievement Reference ID"
+// @Success 200 {array} model.AchievementHistory
+// @Router /achievements/{id}/history [get]
 func GetAchievementHistory(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	role := c.Locals("role").(string)
@@ -438,6 +530,17 @@ func GetAchievementHistory(c *fiber.Ctx) error {
 	})
 }
 
+// UploadAchievementAttachment godoc
+// @Summary Upload achievement attachment
+// @Description Upload attachment for achievement (Mahasiswa only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path string true "Achievement Reference ID"
+// @Param file formData file true "Attachment file"
+// @Success 200 {object} map[string]string
+// @Router /achievements/{id}/attachments [post]
 func UploadAchievementAttachment(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
 	refID := c.Params("id")
