@@ -9,6 +9,14 @@ import (
 	"uas-go/utils"
 )
 
+type AuthService struct {
+	userRepo repository.UserRepository
+}
+
+func NewAuthService(userRepo repository.UserRepository) *AuthService {
+	return &AuthService{userRepo: userRepo}
+}
+
 // Login godoc
 // @Summary Login user
 // @Description Authenticate user and return JWT token
@@ -20,7 +28,7 @@ import (
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
 // @Router /auth/login [post]
-func Login(c *fiber.Ctx) error {
+func (s *AuthService) Login(c *fiber.Ctx) error {
 	var req model.LoginRequest
 
 	if err := c.BodyParser(&req); err != nil {
@@ -30,7 +38,7 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	user, passwordHash, err := repository.GetUserByUsername(req.Username)
+	user, passwordHash, err := s.userRepo.GetUserByUsername(req.Username)
 	if err != nil {
 		return c.Status(401).JSON(fiber.Map{
 			"status":  "error",
@@ -46,14 +54,14 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	roleName, err := repository.GetRoleName(user.RoleID)
+	roleName, _ := s.userRepo.GetRoleName(user.RoleID)
 	if err != nil {
 		roleName = "unknown"
 	}
 
 	roleReadable := strings.Title(strings.ReplaceAll(roleName, "_", " "))
 
-	permissions, _ := repository.GetPermissionsByRole(user.RoleID)
+	permissions, _ := s.userRepo.GetPermissionsByRole(user.RoleID)
 
 	userResp := model.UserResponse{
 		ID:          user.ID,

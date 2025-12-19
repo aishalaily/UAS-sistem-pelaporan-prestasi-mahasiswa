@@ -12,6 +12,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+var AchievementRepo repository.AchievementRepository = &repository.AchievementRepositoryImpl{}
+
 // GetAchievements godoc
 // @Summary Get achievements
 // @Description Get achievements list based on role (Mahasiswa, Dosen Wali, Admin)
@@ -124,7 +126,7 @@ func GetAchievementDetail(c *fiber.Ctx) error {
 func SubmitAchievement(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
 
-	studentID, err := repository.GetStudentIDByUserID(database.PgPool, userID)
+	studentID, err := AchievementRepo.GetStudentIDByUserID(userID)
 	if err != nil {
 		return c.Status(403).JSON(fiber.Map{"error": "student profile not found"})
 	}
@@ -149,12 +151,12 @@ func SubmitAchievement(c *fiber.Ctx) error {
 		Points:          0,
 	}
 
-	mongoID, err := repository.InsertAchievementMongo(mongoPayload)
+	mongoID, err := AchievementRepo.InsertAchievementMongo(mongoPayload)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "failed to save mongo"})
 	}
 
-	refID, err := repository.InsertReference(database.PgPool, studentID, mongoID)
+	refID, err := AchievementRepo.InsertReference(studentID, mongoID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "failed to save reference"})
 	}
@@ -181,6 +183,13 @@ func SubmitAchievement(c *fiber.Ctx) error {
 func SubmitForVerification(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	userID := c.Locals("user_id").(string)
+	role := c.Locals("role").(string)
+
+	if role != "dosen_wali" {
+		return c.Status(403).JSON(fiber.Map{
+			"error": "forbidden",
+		})
+	}
 
 	studentID, err := repository.GetStudentIDByUserID(database.PgPool, userID)
 	if err != nil {
@@ -339,7 +348,7 @@ func VerifyAchievement(c *fiber.Ctx) error {
 		})
 	}
 
-	ref, err := repository.GetReferenceByID(database.PgPool, refID)
+	ref, err := AchievementRepo.GetReferenceByID(refID)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "achievement not found"})
 	}
@@ -348,8 +357,7 @@ func VerifyAchievement(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "achievement not submitted"})
 	}
 
-	allowed, err := repository.IsStudentUnderAdvisor(
-		database.PgPool,
+	allowed, err := AchievementRepo.IsStudentUnderAdvisor(
 		userID,
 		ref.StudentID,
 	)
@@ -357,8 +365,7 @@ func VerifyAchievement(c *fiber.Ctx) error {
 		return c.Status(403).JSON(fiber.Map{"error": "not your advisee"})
 	}
 
-	if err := repository.VerifyAchievement(
-		database.PgPool,
+	if err := AchievementRepo.VerifyAchievement(
 		refID,
 		body.Points,
 		userID,
@@ -373,18 +380,18 @@ func VerifyAchievement(c *fiber.Ctx) error {
 	})
 }
 
-// VerifyAchievement godoc
-// @Summary Verify achievement
-// @Description Verify achievement and assign points (Dosen Wali only)
+// RejectedAchievement godoc
+// @Summary Reject achievement
+// @Description Reject achievement (Dosen Wali only)
 // @Tags Achievements
 // @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path string true "Achievement Reference ID"
-// @Param body body model.VerifyAchievementRequest true "Verification payload"
+// @Param body body model.RejectAchievementRequest true "Rejection payload"
 // @Success 200 {object} map[string]interface{}
 // @Failure 403 {object} map[string]string
-// @Router /achievements/{id}/verify [post]
+// @Router /achievements/{id}/reject [post]
 func RejectAchievement(c *fiber.Ctx) error {
 	refID := c.Params("id")
 	userID := c.Locals("user_id").(string)

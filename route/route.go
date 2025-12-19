@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"uas-go/app/service"
 	"uas-go/middleware"
+	"uas-go/app/repository"
 	
 )
 
@@ -17,8 +18,11 @@ func RegisterRoutes(app *fiber.App) {
 		})
 	})
 
+	userRepo := &repository.UserRepo{}
+	authService := service.NewAuthService(userRepo)
+
 	auth := api.Group("/auth")
-		auth.Post("/login", service.Login)
+		auth.Post("/login", authService.Login)
 		auth.Get("/profile", middleware.AuthRequired(), service.GetProfile)
 		auth.Post("/refresh", service.RefreshToken)
 		auth.Post("/logout", middleware.AuthRequired(), service.Logout)
